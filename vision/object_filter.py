@@ -1,7 +1,8 @@
 class ObjectFilter:
-    Min_Confidence = 0.50
     
-    CRITICAL_OBJECTS = [
+    MIN_CONFIDENCE = 0.50
+
+    CRITICAL_OBJECTS = {
         "person",
         "bicycle",
         "motorcycle",
@@ -9,9 +10,9 @@ class ObjectFilter:
         "bus",
         "truck",
         "train"
-    ]
+    }
 
-    OBSTACLE_OBJECTS = [
+    OBSTACLE_OBJECTS = {
         "chair",
         "bench",
         "couch",
@@ -26,9 +27,9 @@ class ObjectFilter:
         "microwave",
         "sink",
         "toilet"
-    ]
+    }
 
-    OPTIONAL_OBJECTS = [
+    OPTIONAL_OBJECTS = {
         "bottle",
         "cup",
         "cell phone",
@@ -41,23 +42,31 @@ class ObjectFilter:
         "handbag",
         "clock",
         "vase"
-    ]
-    
-    
+    }
+
     def filter_objects(self, detected_objects):
-        
+        """
+        Categorizes detected objects into:
+        - critical
+        - obstacles
+        - optional
+        - unknown
+        """
+
         categorized_objects = {
-        "critical": [],
-        "obstacles": [],
-        "optional": []
+            "critical": [],
+            "obstacles": [],
+            "optional": [],
+            "unknown": []
         }
 
         for obj in detected_objects:
-            
-            if obj["confidence"] < self.Min_Confidence:
+
+            # Ignore low-confidence detections
+            if obj["confidence"] < self.MIN_CONFIDENCE:
                 continue
 
-            object_name = obj["name"]
+            object_name = obj["name"].lower()
 
             if object_name in self.CRITICAL_OBJECTS:
                 categorized_objects["critical"].append(obj)
@@ -67,5 +76,8 @@ class ObjectFilter:
 
             elif object_name in self.OPTIONAL_OBJECTS:
                 categorized_objects["optional"].append(obj)
+
+            else:
+                categorized_objects["unknown"].append(obj)
 
         return categorized_objects
