@@ -11,6 +11,8 @@ class Speaker:
         self.engine.setProperty("rate", self.SPEECH_RATE)
 
         self.queue = queue.Queue()
+        
+        self.last_message = None
 
         self.worker = threading.Thread(
             target=self._speech_worker,
@@ -38,6 +40,11 @@ class Speaker:
         
         if not message:
             return
+        
+        if message == self.last_message:
+            return
+        
+        self.last_message = message
 
         if self.queue.empty():
             self.queue.put(message)

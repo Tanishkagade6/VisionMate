@@ -11,10 +11,11 @@ from vision.ui import VisionUI
 from vision.tracker_memory import TrackerMemory
 from vision.motion_engine import MotionEngine
 from core.decision_engine import DecisionEngine
+from scene.describer import SceneDescriber
 
 class VisionDetector:
   
-    def __init__(self, model_name= "yolov8n.pt"):
+    def __init__(self, model_name= "yolov8s.pt"):
         print("[INFO] Loading YOLO model...")
         
         self.model = YOLO(model_name)
@@ -28,6 +29,7 @@ class VisionDetector:
         self.tracker_memory = TrackerMemory()
         self.motion_engine = MotionEngine()
         self.decision_engine = DecisionEngine()
+        self.scene_describer = SceneDescriber()
         
         self.last_warning = None
         self.last_warning_time = 0
@@ -91,12 +93,19 @@ class VisionDetector:
     def process_frame(self, frame):
         
         try:
+            start = time.time()
+            
             results = self.model.track(
                 frame,
                 persist=True,
                 tracker="bytetrack.yaml",
+                conf = 0.5,
+                imgsz = 960,
+                device=0,
                 verbose=False
             )
+            inference_time = (time.time() - start) * 1000
+            print(f"Inference Time: {inference_time:.2f} ms")
             
         except Exception as e:
             print(e)
@@ -104,14 +113,23 @@ class VisionDetector:
 
         detected_objects = self.extract_objects(results)
         decision = self.decision_engine.analyze(detected_objects)
+        scene_description = self.scene_describer.describe_scene(detected_objects)
+        
+        print("\n========== Scene Description ==========")
+        print(scene_description)
+        
+        if decision:
+            self.speaker.speak_async(decision["navigation"])
         
         annotated_frame = results[0].plot(labels=False)
 
-        return detected_objects,decision, annotated_frame
+        return detected_objects,decision,scene_description, annotated_frame
             
-    
     def start_camera(self):
         cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
         
         if not cap.isOpened():
             print("[ERROR] Could not open webcam.")
@@ -130,9 +148,10 @@ class VisionDetector:
             if not success:
                 break
             
-            detected_objects,decision, annotated_frame = self.process_frame(frame)
+            detected_objects,decision,scene_description, annotated_frame = self.process_frame(frame)
             
             print(decision)
+            print(scene_description)
 
             categorized_objects = self.object_filter.filter_objects(detected_objects)
 
