@@ -1,37 +1,67 @@
-import easyocr
+from paddleocr import PaddleOCR
 import cv2
+from config import OCR_CONFIDENCE, OCR_SCALE
 
 class OCRReader:
 
     def __init__(self):
-        print("Loading EasyOCR model...")
-        self.reader = easyocr.Reader(['en'], gpu=True)
-        print("OCR Ready!")
+        print("Loading PaddleOCR...")
+
+        self.ocr = PaddleOCR(
+            use_angle_cls=True,
+            lang="en")
+
+        print("PaddleOCR Ready!")
 
     def read_text(self, frame):
 
         if frame is None:
             return ""
 
-        # # Convert to grayscale
-        # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        # # Increase contrast
-        # gray = cv2.equalizeHist(gray)
-        # # Remove slight noise
-        # gray = cv2.GaussianBlur(gray, (3, 3), 0)
+        # Upscale for better OCR
+        frame = cv2.resize(
+            frame,
+            None,
+            fx=OCR_SCALE,
+            fy=OCR_SCALE,
+            interpolation=cv2.INTER_CUBIC)
 
-        # # Sharpen text using thresholding
-        # _, processed = cv2.threshold(
-        #     gray,
-        #     0,
-        #     255,
-        #     cv2.THRESH_BINARY + cv2.THRESH_OTSU
-        # )
+        # If image is colour -> preprocess it
+        if len(frame.shape) == 3:
 
-        results = self.reader.readtext(
-            processed,
-            detail=0,
-            paragraph=True
-        )
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        return " ".join(results)
+            gray = cv2.GaussianBlur(gray, (3, 3), 0)
+
+            gray = cv2.adaptiveThreshold(
+                gray,
+                255,
+                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                cv2.THRESH_BINARY,
+                11,
+                2
+            )
+
+        else:
+            # Already grayscale
+            gray = frame
+
+        result = self.ocr.ocr(gray, cls=True)
+
+        if result is None or result[0] is None:
+            return ""
+
+        texts = []
+
+        print("\nDetected Words:\n")
+
+        for line in result[0]:
+
+            text = line[1][0]
+            confidence = line[1][1]
+
+            if confidence > OCR_CONFIDENCE:
+                print(f"{text} --> {confidence:.2f}")
+                texts.append(text)
+
+        return " ".join(texts).strip()
