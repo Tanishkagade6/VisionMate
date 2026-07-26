@@ -1,10 +1,11 @@
 from ultralytics import YOLO
 import cv2
 import time
+from config import VIDEO_URL
 from vision.direction import DirectionEngine
 from vision.distance import DistanceEngine
 from core.warning_manager import WarningManager
-from voice.speaker import Speaker
+from core.speaker_manager import speaker
 from vision.object_filter import ObjectFilter
 from core.safety_engine import SafetyEngine
 from vision.ui import VisionUI
@@ -22,7 +23,7 @@ class VisionDetector:
         self.direction_engine = DirectionEngine()
         self.distance_engine = DistanceEngine()
         self.warning_manager = WarningManager()
-        self.speaker = Speaker()
+        self.speaker = speaker
         self.object_filter = ObjectFilter()
         self.safety_engine = SafetyEngine()
         self.ui = VisionUI()
@@ -30,6 +31,10 @@ class VisionDetector:
         self.motion_engine = MotionEngine()
         self.decision_engine = DecisionEngine()
         self.scene_describer = SceneDescriber()
+        
+        # Navigation control
+        self.running = False
+        self.camera = None
         
         self.last_warning = None
         self.last_warning_time = 0
@@ -102,8 +107,8 @@ class VisionDetector:
                 conf = 0.5,
                 imgsz = 960,
                 device=0,
-                verbose=False
-            )
+                verbose=False)
+            
             inference_time = (time.time() - start) * 1000
             print(f"Inference Time: {inference_time:.2f} ms")
             
@@ -126,18 +131,29 @@ class VisionDetector:
         return detected_objects,decision,scene_description, annotated_frame
             
     def start_camera(self):
-        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        if self.running:
+            return
+
+        self.running = True
+
+        self.camera = cv2.VideoCapture(VIDEO_URL, cv2.CAP_FFMPEG)
+
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH,1280)
+
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT,720)
         
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        
-        if not cap.isOpened():
+        if not self.camera.isOpened():
             print("[ERROR] Could not open webcam.")
+            self.running = False
             return
         
         prev_time = time.time()
-        while True:
-            success, frame = cap.read()
+        
+        while self.running:
+            success, frame = self.camera.read()
+            
+            if not success:
+                break
             
             current_time = time.time()
 
@@ -172,7 +188,25 @@ class VisionDetector:
             cv2.imshow("VisionMate", annotated_frame)
             
             if cv2.waitKey(1) & 0xFF == ord('q'):
+                self.stop_camera()
                 break
             
-        cap.release()
-        cv2.destroyAllWindows() 
+        if self.camera is not None:
+            self.camera.release()
+            self.camera = None
+
+        cv2.destroyAllWindows()
+
+        self.running = False
+            
+    def stop_camera(self):
+
+        print("[INFO] Stopping Navigation...")
+
+        self.running = False
+
+        if self.camera is not None:
+            self.camera.release()
+            self.camera = None
+
+        cv2.destroyAllWindows()

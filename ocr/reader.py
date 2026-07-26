@@ -5,6 +5,7 @@ from config import OCR_CONFIDENCE, OCR_SCALE
 class OCRReader:
 
     def __init__(self):
+
         print("Loading PaddleOCR...")
 
         self.ocr = PaddleOCR(
@@ -18,50 +19,41 @@ class OCRReader:
         if frame is None:
             return ""
 
-        # Upscale for better OCR
+        # Upscale image for better OCR
         frame = cv2.resize(
             frame,
             None,
             fx=OCR_SCALE,
             fy=OCR_SCALE,
-            interpolation=cv2.INTER_CUBIC)
+            interpolation=cv2.INTER_CUBIC
+        )
 
-        # If image is colour -> preprocess it
+        # Convert to grayscale
         if len(frame.shape) == 3:
-
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-            gray = cv2.GaussianBlur(gray, (3, 3), 0)
-
-            gray = cv2.adaptiveThreshold(
-                gray,
-                255,
-                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                cv2.THRESH_BINARY,
-                11,
-                2
-            )
-
         else:
-            # Already grayscale
             gray = frame
 
+        # Increase contrast
+        gray = cv2.equalizeHist(gray)
+
+        # OCR
         result = self.ocr.ocr(gray, cls=True)
 
-        if result is None or result[0] is None:
+        if not result or result[0] is None:
             return ""
 
         texts = []
 
-        print("\nDetected Words:\n")
+        print("\nDetected Text:\n")
 
         for line in result[0]:
 
-            text = line[1][0]
+            text = line[1][0].strip()
             confidence = line[1][1]
 
-            if confidence > OCR_CONFIDENCE:
+            if confidence >= OCR_CONFIDENCE:
                 print(f"{text} --> {confidence:.2f}")
                 texts.append(text)
 
-        return " ".join(texts).strip()
+        return texts

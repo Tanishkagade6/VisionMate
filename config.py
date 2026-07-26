@@ -1,4 +1,8 @@
-VIDEO_URL = "http://192.168.1.7:8080/video"
+VIDEO_URL = "http://192.168.1.7:8081/video"
+
+EMERGENCY_URL = "http://192.168.1.7:8080/emergency"
+
+VOSK_MODEL_PATH = "models/vosk-model-small-en-us-0.15"
 
 FRAME_WIDTH = 1280
 FRAME_HEIGHT = 720
@@ -9,7 +13,7 @@ FLIP_FRAME = None
 
 OCR_CONFIDENCE = 0.50
 
-OCR_SCALE = 2
+OCR_SCALE = 3
 
 OCR_DELAY = 2000      # milliseconds before capture
 
