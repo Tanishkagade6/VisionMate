@@ -1,7 +1,6 @@
 import pyttsx3
 import threading
 
-
 class Speaker:
 
     def __init__(self):
@@ -15,20 +14,25 @@ class Speaker:
         if not text:
             return
 
-        with self.lock:
-            try:
+        try:
+            import pythoncom
+            pythoncom.CoInitialize()
+        except ImportError:
+            pythoncom = None
+ 
+        try:
+            with self.lock:
                 self.engine.say(text)
                 self.engine.runAndWait()
-            except Exception as e:
-                print(f"[Speaker Error] {e}")
+        except Exception as e:
+            print(f"[Speaker Error] {e}")
+        finally:
+            if pythoncom:
+                pythoncom.CoUninitialize()
 
     def speak_async(self, text):
-
-        threading.Thread(
-            target=self.speak,
-            args=(text,),
-            daemon=True
-        ).start()
+        print("SPEAK:", text)
+        self.speak(text)
 
     def stop(self):
 

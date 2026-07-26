@@ -10,7 +10,7 @@ class SOS:
 
     def activate(self):
 
-        self.speaker.speak("Emergency detected. Contacting emergency contact.")
+        self.speaker.speak_async("Emergency detected. Contacting emergency contact.")
         
         try:
             response = requests.get(

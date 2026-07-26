@@ -57,10 +57,10 @@ class DecisionEngine:
             center_count = len(scene_layout["center"])
             right_count = len(scene_layout["right"])
 
-            print("\nObject Count")
-            print(f"Left   : {left_count}")
-            print(f"Center : {center_count}")
-            print(f"Right  : {right_count}")
+            # print("\nObject Count")
+            # print(f"Left   : {left_count}")
+            # print(f"Center : {center_count}")
+            # print(f"Right  : {right_count}")
 
             counts = {
                 "left": left_count,
@@ -103,8 +103,8 @@ class DecisionEngine:
 
             weight += motion_bonus
             
-            print(f"{obj['name']} | Base:{self.HAZARD_WEIGHTS.get(category,1)} | "
-                  f"Motion:{motion_bonus} | Final:{weight}")
+            # print(f"{obj['name']} | Base:{self.HAZARD_WEIGHTS.get(category,1)} | "
+            #       f"Motion:{motion_bonus} | Final:{weight}")
 
             for obj in self.current_objects:
 
@@ -219,8 +219,8 @@ class DecisionEngine:
         
         scene_summary = self.summarize_objects(detected_objects)
 
-        print("\nScene Summary")
-        print(scene_summary)
+        # print("\nScene Summary")
+        # print(scene_summary)
 
         decisions = []
 
@@ -229,7 +229,7 @@ class DecisionEngine:
             message = "No Action"
             priority = 0
             
-            print(obj)
+            # print(obj)
             
             name = obj["name"].lower()
             display_name = obj["name"].capitalize()
@@ -257,14 +257,14 @@ class DecisionEngine:
                 horizontal = motion.get("horizontal", "").strip().lower()
                 depth = motion.get("depth", "").strip().lower()
 
-            print(f"Direction : {direction}")
-            print(f"Distance  : {distance}")
-            print(f"Horizontal: {horizontal}")
-            print(f"Depth     : {depth}")
-            print(f"Category  : {category}")
+            # print(f"Direction : {direction}")
+            # print(f"Distance  : {distance}")
+            # print(f"Horizontal: {horizontal}")
+            # print(f"Depth     : {depth}")
+            # print(f"Category  : {category}")
 
-            print(repr(direction))
-            print(repr(distance))
+            # print(repr(direction))
+            # print(repr(distance))
 
             # Rule 1
             if direction == "center" and distance == "very near":
@@ -339,37 +339,37 @@ class DecisionEngine:
         if len(decisions) == 0:
             return None
         
-        print("\n===== ALL DECISIONS =====")
+        # print("\n===== ALL DECISIONS =====")
         
-        for d in decisions:
-            print(d)
+        # for d in decisions:
+        #     print(d)
             
-        print("=========================\n")
+        # print("=========================\n")
         
         category_summary = self.summarize_categories(decisions)
-        print("Category Summary")
-        print(category_summary)
+        # print("Category Summary")
+        # print(category_summary)
         
         scene_layout = self.analyze_scene_layout(detected_objects)
-        print("\nScene Layout")
-        print(scene_layout)
+        # print("\nScene Layout")
+        # print(scene_layout)
         
         safe_direction = self.find_safe_direction(scene_layout)
 
         hazard_scores = self.calculate_hazard_score(decisions)
-        print("\nHazard Scores")
-        print(hazard_scores)
+        # print("\nHazard Scores")
+        # print(hazard_scores)
 
         instruction = self.generate_navigation_instruction(hazard_scores)
-        print("\nNavigation Instruction")
-        print(instruction)
+        # print("\nNavigation Instruction")
+        # print(instruction)
         
         path_status = self.get_path_status(hazard_scores)
-        print("\nPath Status")
-        print(path_status)
+        # print("\nPath Status")
+        # print(path_status)
 
         safe_direction = self.get_safest_direction(hazard_scores)
-        print(f"\nSafest Direction (Hazard Based): {safe_direction.capitalize()}")
+        # print(f"\nSafest Direction (Hazard Based): {safe_direction.capitalize()}")
         
         best_decision = max(decisions, key=lambda x: x["priority"])
         

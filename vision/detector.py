@@ -32,8 +32,17 @@ class VisionDetector:
         self.decision_engine = DecisionEngine()
         self.scene_describer = SceneDescriber()
         
+        self.last_navigation = ""
+        self.last_navigation_time = 0
+        
+        self.last_scene_description = ""
+        self.last_scene_time = 0
+
+        self.SCENE_UPDATE_INTERVAL = 3
+        
         # Navigation control
         self.running = False
+        self.frame_callback = None
         self.camera = None
         
         self.last_warning = None
@@ -86,66 +95,81 @@ class VisionDetector:
                 "y2": int(y2),
                 })
 
-        for obj in detected_objects:
-            print(f"ID:{obj['id']} | "
-                f"{obj['name']} | "
-                f"{obj['direction']} | "
-                f"{obj['distance']} |"
-                f"{obj['motion']} ")
+        # for obj in detected_objects:
+        #     print(f"ID:{obj['id']} | "
+        #         f"{obj['name']} | "
+        #         f"{obj['direction']} | "
+        #         f"{obj['distance']} |"
+        #         f"{obj['motion']} ")
                 
         return detected_objects
     
     def process_frame(self, frame):
-        
+
         try:
             start = time.time()
-            
+
             results = self.model.track(
                 frame,
                 persist=True,
                 tracker="bytetrack.yaml",
-                conf = 0.5,
-                imgsz = 960,
+                conf=0.5,
+                imgsz=512,
                 device=0,
-                verbose=False)
-            
-            inference_time = (time.time() - start) * 1000
-            print(f"Inference Time: {inference_time:.2f} ms")
-            
+                verbose=False
+            )
+
         except Exception as e:
             print(e)
-            return [], frame
+            return [], None, "", frame
 
         detected_objects = self.extract_objects(results)
+
+        # Decision Engine
         decision = self.decision_engine.analyze(detected_objects)
-        scene_description = self.scene_describer.describe_scene(detected_objects)
-        
-        print("\n========== Scene Description ==========")
-        print(scene_description)
-        
+
+        # Update scene description only every 3 seconds
+        current_time = time.time()
+
+        if current_time - self.last_scene_time > self.SCENE_UPDATE_INTERVAL:
+            self.last_scene_description = self.scene_describer.describe_scene(detected_objects)
+            self.last_scene_time = current_time
+
+        scene_description = self.last_scene_description
+
+        # Speak only when navigation changes
         if decision:
-            self.speaker.speak_async(decision["navigation"])
-        
+
+            nav = decision["navigation"]
+
+            current_time = time.time()
+
+            if (nav != self.last_navigation or current_time - self.last_navigation_time > 8):
+                self.speaker.speak_async(nav)
+                self.last_navigation = nav
+                self.last_navigation_time = current_time
+
         annotated_frame = results[0].plot(labels=False)
 
-        return detected_objects,decision,scene_description, annotated_frame
+        return detected_objects, decision, scene_description, annotated_frame
             
     def start_camera(self):
+        
         if self.running:
             return
-
-        self.running = True
 
         self.camera = cv2.VideoCapture(VIDEO_URL, cv2.CAP_FFMPEG)
 
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH,1280)
-
         self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT,720)
         
         if not self.camera.isOpened():
             print("[ERROR] Could not open webcam.")
-            self.running = False
             return
+        
+        self.running = True
+        
+        print("[INFO] Camera Started")
         
         prev_time = time.time()
         
@@ -165,10 +189,7 @@ class VisionDetector:
                 break
             
             detected_objects,decision,scene_description, annotated_frame = self.process_frame(frame)
-            
-            print(decision)
-            print(scene_description)
-
+           
             categorized_objects = self.object_filter.filter_objects(detected_objects)
 
             warnings = self.safety_engine.analyze(categorized_objects)
@@ -177,16 +198,17 @@ class VisionDetector:
             if warning:
                 self.last_warning = warning
                 self.last_warning_time = time.time()
-                self.speaker.speak_async(warning["message"])
+                # self.speaker.speak_async(warning["message"])
                 
             if (self.last_warning is not None
                 and time.time() - self.last_warning_time < self.WARNING_DISPLAY_TIME):
                 
                 annotated_frame = self.ui.draw_warning_panel(annotated_frame,self.last_warning)
                 annotated_frame = self.ui.draw_object_labels(annotated_frame,detected_objects) 
-                             
-            cv2.imshow("VisionMate", annotated_frame)
             
+            import cv2 as cv  
+            cv2.imshow("VisionMate", annotated_frame)          
+                 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 self.stop_camera()
                 break

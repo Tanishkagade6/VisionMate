@@ -11,9 +11,9 @@ ROTATE_FRAME = None
 
 FLIP_FRAME = None
 
-OCR_CONFIDENCE = 0.50
+OCR_CONFIDENCE = 0.4
 
-OCR_SCALE = 3
+OCR_SCALE = 4
 
 OCR_DELAY = 2000      # milliseconds before capture
 
