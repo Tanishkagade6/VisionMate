@@ -1,6 +1,7 @@
 from ultralytics import YOLO
 import cv2
 import time
+import torch
 from config import VIDEO_URL
 from vision.direction import DirectionEngine
 from vision.distance import DistanceEngine
@@ -19,10 +20,14 @@ class VisionDetector:
     def __init__(self, model_name= "yolov8s.pt"):
         print("[INFO] Loading YOLO model...")
         
+        print("[INFO] Loading YOLO model...")
+
         self.model = YOLO(model_name)
+        self.model.to("cuda")
         self.direction_engine = DirectionEngine()
         self.distance_engine = DistanceEngine()
         self.warning_manager = WarningManager()
+        
         self.speaker = speaker
         self.object_filter = ObjectFilter()
         self.safety_engine = SafetyEngine()
@@ -38,7 +43,7 @@ class VisionDetector:
         self.last_scene_description = ""
         self.last_scene_time = 0
 
-        self.SCENE_UPDATE_INTERVAL = 3
+        self.SCENE_UPDATE_INTERVAL = 5
         
         # Navigation control
         self.running = False
@@ -59,6 +64,9 @@ class VisionDetector:
 
             class_id = int(box.cls[0])
             confidence = float(box.conf[0])
+            
+            if confidence < 0.60:
+                continue
 
             # Get tracking ID
             if box.id is not None:
@@ -67,7 +75,9 @@ class VisionDetector:
                 track_id = -1
 
             object_name = self.model.names[class_id]
-            
+            if object_name == "dining table":
+                object_name = "table"
+                
             x1, y1, x2, y2 = map(float, box.xyxy[0])
 
             box_height = y2 - y1
@@ -108,25 +118,43 @@ class VisionDetector:
 
         try:
             start = time.time()
-
+            
+            # results = self.model(frame, conf=0.5)
+            frame = cv2.resize(frame, (640,480))
+            t1 = time.time()
+            
             results = self.model.track(
                 frame,
                 persist=True,
                 tracker="bytetrack.yaml",
                 conf=0.5,
-                imgsz=512,
+                imgsz=416,
                 device=0,
                 verbose=False
             )
+            t2 = time.time()
+            
+            for box in results[0].boxes:
+                cls = int(box.cls[0])
+                conf = float(box.conf[0])
+                class_name = self.model.names[cls]
 
+                if class_name == "dining table":
+                    class_name = "table"
+        
         except Exception as e:
             print(e)
             return [], None, "", frame
 
         detected_objects = self.extract_objects(results)
+        t3 = time.time()
+        
+        # for obj in detected_objects:
+            # print(obj["name"], obj["confidence"])
 
         # Decision Engine
         decision = self.decision_engine.analyze(detected_objects)
+        t4 = time.time()
 
         # Update scene description only every 3 seconds
         current_time = time.time()
@@ -150,6 +178,9 @@ class VisionDetector:
                 self.last_navigation_time = current_time
 
         annotated_frame = results[0].plot(labels=False)
+        t5 = time.time()
+        
+        end = time.time()
 
         return detected_objects, decision, scene_description, annotated_frame
             
@@ -158,8 +189,8 @@ class VisionDetector:
         if self.running:
             return
 
-        self.camera = cv2.VideoCapture(VIDEO_URL, cv2.CAP_FFMPEG)
-
+        self.camera = cv2.VideoCapture(VIDEO_URL)
+        self.camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.camera.set(cv2.CAP_PROP_FRAME_WIDTH,1280)
         self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT,720)
         
@@ -173,10 +204,19 @@ class VisionDetector:
         
         prev_time = time.time()
         
+        cv2.namedWindow("VisionMate",cv2.WINDOW_NORMAL)
+
+        cv2.resizeWindow("VisionMate",960,540)
+        
         while self.running:
+                        
+            for _ in range(2):
+                self.camera.grab()
+                
             success, frame = self.camera.read()
             
             if not success:
+                print("Failed to read frame")
                 break
             
             current_time = time.time()
@@ -206,8 +246,13 @@ class VisionDetector:
                 annotated_frame = self.ui.draw_warning_panel(annotated_frame,self.last_warning)
                 annotated_frame = self.ui.draw_object_labels(annotated_frame,detected_objects) 
             
-            import cv2 as cv  
-            cv2.imshow("VisionMate", annotated_frame)          
+            # import cv2 as cv  
+            # cv2.namedWindow("VisionMate", cv2.WINDOW_NORMAL)
+            # cv2.resizeWindow("VisionMate", 900, 500)
+            
+            display_frame = cv2.resize(annotated_frame, (960, 540))
+            cv2.imshow("VisionMate", display_frame)
+            # cv2.imshow("VisionMate", annotated_frame)          
                  
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 self.stop_camera()

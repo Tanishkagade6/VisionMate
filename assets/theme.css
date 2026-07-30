@@ -1,0 +1,241 @@
+/* ===========================
+   VisionMate V2
+   =========================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* -----------------------------
+   Main App
+------------------------------ */
+
+.stApp{
+    background:#FFF8DC;
+}
+
+/* -----------------------------
+   Hide Streamlit Menu
+------------------------------ */
+
+#MainMenu{
+    visibility:hidden;
+}
+
+footer{
+    visibility:hidden;
+}
+
+header{
+    visibility:hidden;
+}
+
+/* -----------------------------
+   Hero Card
+------------------------------ */
+
+.hero-box{
+
+    background:white;
+
+    border-radius:25px;
+
+    padding:30px;
+
+    text-align:center;
+
+    box-shadow:0px 6px 18px rgba(0,0,0,.08);
+
+    margin-bottom:20px;
+
+}
+
+.hero-box h1{
+
+    font-size:46px;
+
+    color:#2F4858;
+
+    margin-bottom:8px;
+
+}
+
+.hero-box p{
+
+    font-size:22px;
+
+    color:#666;
+
+}
+
+/* -----------------------------
+   Info Cards
+------------------------------ */
+
+div[data-testid="stAlert"]{
+
+    border-radius:18px;
+
+    border:none;
+
+    box-shadow:0px 4px 12px rgba(0,0,0,.05);
+
+    font-size:18px;
+
+}
+
+/* -----------------------------
+   Camera
+------------------------------ */
+
+img{
+
+    border-radius:22px;
+
+    border:5px solid white;
+
+    box-shadow:0px 8px 20px rgba(0,0,0,.12);
+
+}
+
+/* -----------------------------
+   Buttons
+------------------------------ */
+
+.stButton>button{
+
+    border-radius:18px;
+
+    height:65px;
+
+    font-size:24px;
+
+    font-weight:700;
+
+    border:none;
+
+    transition:.3s;
+
+}
+
+/* -----------------------------
+   Emergency Button
+------------------------------ */
+
+.stButton>button:hover{
+
+    transform:scale(1.03);
+
+}
+
+/* -----------------------------
+   Sidebar
+------------------------------ */
+
+section[data-testid="stSidebar"]{
+
+    background:#FFF3B0;
+
+    border-right:2px solid #F0D98C;
+
+}
+
+/* -----------------------------
+   Sidebar Title
+------------------------------ */
+
+section[data-testid="stSidebar"] h1,
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3{
+
+    color:#2F4858;
+
+}
+
+/* -----------------------------
+   Radio Buttons
+------------------------------ */
+
+.stRadio{
+
+    font-size:18px;
+
+}
+
+/* -----------------------------
+   Select Box
+------------------------------ */
+
+.stSelectbox{
+
+    font-size:18px;
+
+}
+
+/* -----------------------------
+   Large Text
+------------------------------ */
+
+h1{
+
+    font-size:44px;
+
+}
+
+h2{
+
+    font-size:34px;
+
+}
+
+h3{
+
+    font-size:28px;
+
+}
+
+p{
+
+    font-size:18px;
+
+}
+
+/* -----------------------------
+   Success
+------------------------------ */
+
+div[data-baseweb="notification"]{
+
+    border-radius:18px;
+
+}
+
+/* -----------------------------
+   Divider
+------------------------------ */
+
+hr{
+
+    border-top:2px solid #E4D28A;
+
+}
+
+/* -----------------------------
+   Scrollbar
+------------------------------ */
+
+::-webkit-scrollbar{
+
+    width:10px;
+
+}
+
+::-webkit-scrollbar-thumb{
+
+    background:#E4D28A;
+
+    border-radius:20px;
+
+}

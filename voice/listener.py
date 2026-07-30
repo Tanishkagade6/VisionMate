@@ -27,7 +27,7 @@ class VoiceListener:
                 blocksize=8000,
                 dtype="int16",
                 channels=1,
-                device=1,          # Realtek Microphone
+                # device=1,          # Realtek Microphone
                 callback=self.callback):
 
             while True:

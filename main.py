@@ -1,93 +1,44 @@
-import cv2
-from vision.detector import VisionDetector
-from ocr.reader import OCRReader
-from modules.emergency import Emergency
-from core.speaker_manager import speaker
-from config import VIDEO_URL
+from voice.listener import VoiceListener
+from voice.commands import CommandHandler
 
-detector = VisionDetector()
-ocr = OCRReader()
-emergency = Emergency()
+class VisionMate:
 
-while True:
+    def __init__(self):
 
-    print("\n========== VisionMate ==========")
-    print("1. Navigation")
-    print("2. Read Document")
-    print("3. Emergency")
-    print("4. Exit")
+        print("=" * 50)
+        print(" VisionMate Started ")
+        print("=" * 50)
 
-    choice = input("Enter choice: ")
+        self.listener = VoiceListener()
+        self.handler = CommandHandler()
 
-    if choice == "1":
-        detector.start_camera()
+    def run(self):
+        
+        print("\n========== VisionMate ==========")
+        print("Available Voice Commands:")
+        print("🎤 Start Navigation")
+        print("📄 Read Document")
+        # print("🌄 Describe Scene")
+        print("🚨 Emergency SOS")
+        print("❌ Exit")
+        print("=" * 33)
 
-    elif choice == "2":
-        cap = cv2.VideoCapture(VIDEO_URL, cv2.CAP_FFMPEG)
+        self.handler.speaker.speak_async(
+            "Welcome to VisionMate. How can I help you?"
+        )
 
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+        running = True
 
-        if not cap.isOpened():
-            print("Could not open camera")
-            continue
+        while running:
 
-        print("\nPress SPACE to capture document")
-        print("Press ESC to cancel")
+            command = self.listener.listen()
 
-        while True:
+            if command:
+                running = self.handler.execute(command)
 
-            ret, frame = cap.read()\
-            
-            cv2.imwrite("ocr_test.jpg", frame)
+        print("VisionMate Closed.")
 
-            if not ret:
-                break
+if __name__ == "__main__":
 
-            cv2.imshow("Document Reader", frame)
-
-            key = cv2.waitKey(1)
-
-            # SPACE
-            if key == 32:
-                cv2.imwrite("ocr_test.jpg", frame)
-                print("Saved ocr_test.jpg")                
-                texts = ocr.read_text(frame)
-                
-                print("\n========== OCR RESULT ==========\n")
-
-                for line in texts:
-                    print(line)
-
-                if texts:
-                    speaker.speak_async(" ".join(texts))
-                
-                if texts:
-                    speaker.speak_async(" ".join(texts))
-
-                print("\n========== OCR RESULT ==========\n")
-
-                if len(texts) == 0:
-                    print("No text detected.")
-
-                else:
-                    for t in texts:
-                        print(t)
-
-                break
-
-            # ESC
-            elif key == 27:
-                break
-
-        cap.release()
-        cv2.destroyAllWindows()  
-
-    elif choice == "3":
-        emergency.activate()
-
-    elif choice == "4":
-        break
-
-    else:
-        print("Invalid choice")
+    app = VisionMate()
+    app.run()

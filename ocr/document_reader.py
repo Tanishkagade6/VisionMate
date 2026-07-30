@@ -16,13 +16,17 @@ class DocumentReader:
     def start(self):
 
         self.speaker.speak("Hold the document steady.")
-        time.sleep(2)
+        time.sleep(3)
 
         cap = None
 
-        # Retry opening the camera
+        # Retry opening camera
         for _ in range(5):
+
             cap = cv2.VideoCapture(VIDEO_URL, cv2.CAP_FFMPEG)
+
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
             if cap.isOpened():
                 break
@@ -33,52 +37,54 @@ class DocumentReader:
             self.speaker.speak("Unable to open camera.")
             return
 
-        # Allow camera to autofocus
-        for _ in range(10):
+        # -----------------------------
+        # Warm up camera and autofocus
+        # -----------------------------
+        ret = False
+        frame = None
+
+        for _ in range(30):
             ret, frame = cap.read()
+            time.sleep(0.03)
 
         cap.release()
 
-        if not ret:
+        if not ret or frame is None:
             self.speaker.speak("Unable to capture image.")
             return
 
-        cv2.imwrite("captured_document.jpg", frame)
-
-        self.speaker.speak("Reading text.")
+        # Speak while OCR starts
+        self.speaker.speak_async("Reading text.")
         
+        print("Captured Frame Shape:", frame.shape)
+
         texts = self.reader.read_text(frame)
 
-        if texts:
-            chunk = ""
-            
-            for line in texts:
-                chunk += line + " "
-                
-                # Speak after approximately 250 characters
-                if len(chunk) > 250:
-                    self.speaker.speak(chunk.strip())
-                    chunk = ""
+        print("OCR Output:", texts)
 
-            # Speak any remaining text
-            if chunk:
-                self.speaker.speak(chunk.strip())
-                
-            else:
-                self.speaker.speak("No text detected. Please move closer and try again.")
-    
+        if not texts:
+            self.speaker.speak("No text detected. Please move closer and try again.")
+            return
+
+        paragraph = " ".join(texts)
+
+        print("\nFinal Text:\n")
+        print(paragraph)
+
+        self.speak_long_text(paragraph)
+
     def speak_long_text(self, text):
 
         if not text:
             return
 
-        # Split text into sentences
+        # Split into sentences
         sentences = re.split(r'(?<=[.!?])\s+', text)
 
-        # If OCR returns one very long sentence,
-        # split it into smaller chunks.
+        # If OCR returns one long sentence,
+        # split into chunks.
         if len(sentences) == 1:
-            chunk_size = 200
+            chunk_size = 180
             sentences = [
                 text[i:i + chunk_size]
                 for i in range(0, len(text), chunk_size)
@@ -89,4 +95,4 @@ class DocumentReader:
             sentence = sentence.strip()
 
             if sentence:
-                self.speaker.speak_async(sentence) 
+                self.speaker.speak(sentence)

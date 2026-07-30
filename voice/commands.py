@@ -21,12 +21,27 @@ class CommandHandler:
 
     def execute(self, command):
 
-        action = self.commands.get(command)
+        command = command.lower()
 
-        if action:
-            return action()
+        if "navigation" in command and ("start" in command or "begin" in command):
+            return self.start_navigation()
 
-        self.speaker.speak("Sorry, I didn't understand that command.")
+        elif "navigation" in command and ("stop" in command or "close" in command):
+            return self.stop_navigation()
+
+        elif "read" in command or "document" in command or "ocr" in command:
+            return self.read_document()
+
+        elif "scene" in command or "describe" in command:
+            return self.describe_scene()
+
+        elif "emergency" in command or "help" in command or "sos" in command:
+            return self.emergency()
+
+        elif "exit" in command or "quit" in command or "close" in command:
+            return self.exit()
+
+        self.speaker.speak_async("Sorry, I didn't understand.")
         return True
 
     def read_document(self):
@@ -44,8 +59,9 @@ class CommandHandler:
             from modules.navigation import Navigation
             self.navigation = Navigation()
             
+        
+        self.navigation.start()    
         self.speaker.speak_async("Starting navigation")
-        self.navigation.start()
         return True
 
     def stop_navigation(self):

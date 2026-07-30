@@ -11,7 +11,6 @@ class Navigation:
 
         # Prevent multiple navigation threads
         if self.thread and self.thread.is_alive():
-            print("[INFO] Navigation is already running.")
             return
 
         print("[INFO] Starting Navigation...")

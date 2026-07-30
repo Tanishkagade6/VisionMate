@@ -137,7 +137,7 @@ class DecisionEngine:
 
         return safest_direction
     
-    def generate_navigation_instruction(self, hazard_scores):
+    def generate_navigation_instruction(self, hazard_scores, obstacle_name="Obstacle"):
 
         path_status = self.get_path_status(hazard_scores)
 
@@ -153,10 +153,10 @@ class DecisionEngine:
         elif center == "Caution":
 
             if left == "Clear":
-                return "Person ahead. Move slightly left."
-
+                return f"{obstacle_name.capitalize()} ahead. Move slightly left."
+            
             elif right == "Clear":
-                return "Person ahead. Move slightly right."
+                return f"{obstacle_name.capitalize()} ahead. Move slightly right."
 
             else:
                 return "Proceed carefully."
@@ -359,8 +359,14 @@ class DecisionEngine:
         hazard_scores = self.calculate_hazard_score(decisions)
         # print("\nHazard Scores")
         # print(hazard_scores)
+        
+        center_objects = [obj for obj in detected_objects if obj["direction"].lower() == "center"]
 
-        instruction = self.generate_navigation_instruction(hazard_scores)
+        obstacle_name = center_objects[0]["name"] if center_objects else "Obstacle"
+
+        instruction = self.generate_navigation_instruction(hazard_scores, obstacle_name)
+         
+        # instruction = self.generate_navigation_instruction(hazard_scores, obstacle_name)
         # print("\nNavigation Instruction")
         # print(instruction)
         
