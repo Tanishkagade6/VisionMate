@@ -183,6 +183,15 @@ class VisionDetector:
         end = time.time()
 
         return detected_objects, decision, scene_description, annotated_frame
+    
+    def reset(self):
+        """Call when starting a fresh navigation session."""
+        self.last_navigation = ""
+        self.last_navigation_time = 0
+        self.last_scene_description = ""
+        self.last_scene_time = 0
+        self.last_warning = None
+        self.last_warning_time = 0
             
     def start_camera(self):
         
